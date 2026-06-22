@@ -34,7 +34,6 @@ let PurchasesService = class PurchasesService {
         try {
             const reservation = await queryRunner.manager.findOne(reservation_entity_1.Reservation, {
                 where: { id: dto.reservationId },
-                relations: { eventSector: true },
                 lock: { mode: 'pessimistic_write' }
             });
             if (!reservation) {

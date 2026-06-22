@@ -38,7 +38,6 @@ let ReservationsService = class ReservationsService {
         try {
             const sector = await queryRunner.manager.findOne(event_sector_entity_1.EventSector, {
                 where: { id: dto.eventSectorId },
-                relations: { event: true },
                 lock: { mode: 'pessimistic_write' }
             });
             if (!sector) {
@@ -102,7 +101,6 @@ let ReservationsService = class ReservationsService {
         try {
             const reservation = await queryRunner.manager.findOne(reservation_entity_1.Reservation, {
                 where: { id: reservationId },
-                relations: { eventSector: true },
                 lock: { mode: 'pessimistic_write' }
             });
             if (!reservation || reservation.status !== reservation_status_enum_1.ReservationStatus.PENDING || reservation.expiresAt > new Date()) {

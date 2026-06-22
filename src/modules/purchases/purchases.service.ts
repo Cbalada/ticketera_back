@@ -23,7 +23,6 @@ export class PurchasesService {
     try {
       const reservation = await queryRunner.manager.findOne(Reservation, {
         where: { id: dto.reservationId },
-        relations: { eventSector: true },
         lock: { mode: 'pessimistic_write' }
       });
       if (!reservation) {
