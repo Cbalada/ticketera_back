@@ -13,7 +13,10 @@ async function bootstrap() {
   const logger = app.get(AppLogger);
   app.useLogger(logger);
   app.use(cookieParser());
-  app.enableCors({ origin: true, credentials: true });
+  app.enableCors({
+    origin: ['https://ticketera-front-khaki.vercel.app'],
+    credentials: true
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
