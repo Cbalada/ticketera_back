@@ -94,7 +94,18 @@ let ReservationsService = class ReservationsService {
             await this.expireOne(reservation.id);
         }
     }
+    async cancel(userId, reservationId) {
+        return this.releaseOne(reservationId, {
+            userId,
+            ignoreExpiresAt: true
+        });
+    }
     async expireOne(reservationId) {
+        await this.releaseOne(reservationId, {
+            ignoreExpiresAt: false
+        });
+    }
+    async releaseOne(reservationId, options) {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -103,9 +114,20 @@ let ReservationsService = class ReservationsService {
                 where: { id: reservationId },
                 lock: { mode: 'pessimistic_write' }
             });
-            if (!reservation || reservation.status !== reservation_status_enum_1.ReservationStatus.PENDING || reservation.expiresAt > new Date()) {
+            if (!reservation) {
+                if (options.userId === undefined) {
+                    await queryRunner.rollbackTransaction();
+                    return;
+                }
+                throw new common_1.NotFoundException('Reservation not found');
+            }
+            if (options.userId !== undefined && reservation.userId !== options.userId) {
+                throw new common_1.ForbiddenException('Reservation does not belong to user');
+            }
+            if (reservation.status !== reservation_status_enum_1.ReservationStatus.PENDING ||
+                (!options.ignoreExpiresAt && reservation.expiresAt > new Date())) {
                 await queryRunner.rollbackTransaction();
-                return;
+                return reservation;
             }
             const sector = await queryRunner.manager.findOneOrFail(event_sector_entity_1.EventSector, {
                 where: { id: reservation.eventSectorId },
@@ -124,6 +146,7 @@ let ReservationsService = class ReservationsService {
             const payload = { eventId: sector.eventId, sector: sector.sector, availableQuantity: sector.availableQuantity };
             this.realtime.stockUpdated(payload);
             this.realtime.reservationExpired(sector.eventId, { reservationId, ...payload });
+            return reservation;
         }
         catch (error) {
             await queryRunner.rollbackTransaction();

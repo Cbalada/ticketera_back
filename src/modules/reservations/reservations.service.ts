@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, LessThanOrEqual, Repository } from 'typeorm';
@@ -96,7 +96,23 @@ export class ReservationsService {
     }
   }
 
+  async cancel(userId: number, reservationId: number) {
+    return this.releaseOne(reservationId, {
+      userId,
+      ignoreExpiresAt: true
+    });
+  }
+
   private async expireOne(reservationId: number) {
+    await this.releaseOne(reservationId, {
+      ignoreExpiresAt: false
+    });
+  }
+
+  private async releaseOne(
+    reservationId: number,
+    options: { userId?: number; ignoreExpiresAt: boolean }
+  ): Promise<Reservation | undefined> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -105,9 +121,22 @@ export class ReservationsService {
         where: { id: reservationId },
         lock: { mode: 'pessimistic_write' }
       });
-      if (!reservation || reservation.status !== ReservationStatus.PENDING || reservation.expiresAt > new Date()) {
+      if (!reservation) {
+        if (options.userId === undefined) {
+          await queryRunner.rollbackTransaction();
+          return;
+        }
+        throw new NotFoundException('Reservation not found');
+      }
+      if (options.userId !== undefined && reservation.userId !== options.userId) {
+        throw new ForbiddenException('Reservation does not belong to user');
+      }
+      if (
+        reservation.status !== ReservationStatus.PENDING ||
+        (!options.ignoreExpiresAt && reservation.expiresAt > new Date())
+      ) {
         await queryRunner.rollbackTransaction();
-        return;
+        return reservation;
       }
       const sector = await queryRunner.manager.findOneOrFail(EventSector, {
         where: { id: reservation.eventSectorId },
@@ -131,6 +160,7 @@ export class ReservationsService {
       const payload = { eventId: sector.eventId, sector: sector.sector, availableQuantity: sector.availableQuantity };
       this.realtime.stockUpdated(payload);
       this.realtime.reservationExpired(sector.eventId, { reservationId, ...payload });
+      return reservation;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

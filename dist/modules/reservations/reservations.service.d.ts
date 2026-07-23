@@ -10,5 +10,7 @@ export declare class ReservationsService {
     create(userId: number, dto: CreateReservationDto): Promise<Reservation>;
     myReservations(userId: number): Promise<Reservation[]>;
     expireReservations(): Promise<void>;
+    cancel(userId: number, reservationId: number): Promise<Reservation | undefined>;
     private expireOne;
+    private releaseOne;
 }

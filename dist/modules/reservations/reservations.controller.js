@@ -29,6 +29,9 @@ let ReservationsController = class ReservationsController {
     mine(user) {
         return this.reservations.myReservations(user.sub);
     }
+    cancel(user, id) {
+        return this.reservations.cancel(user.sub, id);
+    }
 };
 exports.ReservationsController = ReservationsController;
 __decorate([
@@ -46,6 +49,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ReservationsController.prototype, "mine", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", void 0)
+], ReservationsController.prototype, "cancel", null);
 exports.ReservationsController = ReservationsController = __decorate([
     (0, swagger_1.ApiTags)('reservations'),
     (0, swagger_1.ApiBearerAuth)(),

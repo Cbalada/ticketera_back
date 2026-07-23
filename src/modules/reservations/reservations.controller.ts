@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
@@ -21,5 +21,10 @@ export class ReservationsController {
   @Get('my-reservations')
   mine(@CurrentUser() user: JwtPayload) {
     return this.reservations.myReservations(user.sub);
+  }
+
+  @Delete(':id')
+  cancel(@CurrentUser() user: JwtPayload, @Param('id', ParseIntPipe) id: number) {
+    return this.reservations.cancel(user.sub, id);
   }
 }

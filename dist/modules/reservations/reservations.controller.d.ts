@@ -6,4 +6,5 @@ export declare class ReservationsController {
     constructor(reservations: ReservationsService);
     create(user: JwtPayload, dto: CreateReservationDto): Promise<import("./entities/reservation.entity").Reservation>;
     mine(user: JwtPayload): Promise<import("./entities/reservation.entity").Reservation[]>;
+    cancel(user: JwtPayload, id: number): Promise<import("./entities/reservation.entity").Reservation | undefined>;
 }

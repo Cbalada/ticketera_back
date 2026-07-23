@@ -21,6 +21,7 @@ Este documento contiene un listado de los endpoints disponibles en el backend, l
 
 - **Reservations — Crear reserva:** `POST /reservations` : Requiere Bearer JWT. Body: `CreateReservationDto` ([src/modules/reservations/dto/create-reservation.dto.ts](src/modules/reservations/dto/create-reservation.dto.ts)).
 - **Reservations — Mis reservas:** `GET /reservations/my-reservations` : Requiere Bearer JWT.
+- **Reservations — Cancelar reserva:** `DELETE /reservations/:id` : Requiere Bearer JWT. Cancela una reserva pendiente del usuario y libera los tickets inmediatamente, aunque todavia no hayan pasado los 5 minutos.
 
 - **Admin — Actualizar precios por evento:** `PATCH /admin/events/:eventId/prices` : Requiere `ADMIN`. Body: `UpdatePricesDto` ([src/modules/events/dto/update-prices.dto.ts](src/modules/events/dto/update-prices.dto.ts)).
 - **Admin — Reporte de ventas:** `GET /admin/sales` : Requiere `ADMIN`.
@@ -167,6 +168,15 @@ Ejemplo response:
   "eventSector": { "id": 1, "eventId": 42, "sector": "GENERAL", "price": "30000.00" , "capacity": 1000, "availableQuantity": 998 }
 }
 ```
+
+Cancelar una reserva pendiente:
+
+```http
+DELETE /reservations/11
+Authorization: Bearer <jwt>
+```
+
+- Ejemplo response (200): la reserva queda con `status: "EXPIRED"` y el stock del sector se incrementa en el momento. Tambien se emiten `stock.updated` y `reservation.expired` por Socket.IO.
 
 8) `CreatePurchaseDto` ([src/modules/purchases/dto/create-purchase.dto.ts](src/modules/purchases/dto/create-purchase.dto.ts))
 - Campos:
